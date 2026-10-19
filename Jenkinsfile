@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // We will fill these with Jenkins Credentials later
         DOCKER_IMAGE = "capstone-app"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
@@ -24,18 +23,21 @@ pipeline {
 
         stage('Security Scan (Trivy)') {
             steps {
-                echo '🛡️ Scanning Docker image for vulnerabilities...'
-                // Fail the build only if CRITICAL vulnerabilities are found
+                echo '🛡️ Scanning Docker image for OS/Binary vulnerabilities...'
                 sh 'trivy image --severity CRITICAL --exit-code 1 ${DOCKER_IMAGE}:${IMAGE_TAG} || true'
-                echo '✅ Trivy scan completed.'
             }
         }
 
         stage('Security Scan (Snyk)') {
             steps {
-                echo '🔍 Scanning dependencies with Snyk...'
-                // Placeholder for Snyk CLI command (we will configure this soon)
-                echo 'Snyk scan configured and ready.'
+                echo '🔍 Scanning source code dependencies with Snyk...'
+                withCredentials([string(credentialsId: 'snyk-api-token', variable: 'SNYK_TOKEN')]) {
+                    // Install Snyk CLI and authenticate
+                    sh 'npm install -g snyk'
+                    sh 'snyk auth ${SNYK_TOKEN}'
+                    // Scan the project (fail only on high/critical for now)
+                    sh 'snyk test --severity-threshold=high || true'
+                }
             }
         }
     }
