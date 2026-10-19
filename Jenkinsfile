@@ -32,10 +32,7 @@ pipeline {
             steps {
                 echo '🔍 Scanning source code dependencies with Snyk...'
                 withCredentials([string(credentialsId: 'snyk-api-token', variable: 'SNYK_TOKEN')]) {
-                    // Install Snyk CLI and authenticate
-                    sh 'npm install -g snyk'
                     sh 'snyk auth ${SNYK_TOKEN}'
-                    // Scan the project (fail only on high/critical for now)
                     sh 'snyk test --severity-threshold=high || true'
                 }
             }
